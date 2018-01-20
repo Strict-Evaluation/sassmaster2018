@@ -1,9 +1,18 @@
 #!/usr/bin/env bash
 
-mkfifo ml_fifo
+rm -f to_ml
+rm -f from_ml
+
+mkfifo to_ml
+sleep 10d > to_ml &
+
+mkfifo from_ml
 
 ./run.lua &
 
+sleep 2
+
 node server.js
 
-rm ml_fifo
+rm -f to_ml
+rm -f from_ml
