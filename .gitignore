@@ -1,5 +1,5 @@
 node_modules
 
 .~lock.sarcasm_v2.csv#
-.run.lua.swp
+*.lua.swp
 

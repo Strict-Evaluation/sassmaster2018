@@ -1,6 +1,9 @@
 #!/usr/bin/env th
 
 require 'torch'
+require 'nn'
+
+local parse = require("parse")
 
 -- Train our network
 
@@ -9,6 +12,10 @@ require 'torch'
 if arg[1] == 'train' then
   -- test network here
   print('Testing:')
+
+  local rnn = nn.Sequential()
+  local tbl = parse.read_file("sarcasm_v2.csv")
+  print(tbl)
 
   os.exit()
 end
