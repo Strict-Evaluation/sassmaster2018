@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "start": "bash start.sh"
+  },
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "express": "^4.16.2",
+    "lodash": "^4.17.4",
+    "webpack": "^3.8.1"
+  }
+}
