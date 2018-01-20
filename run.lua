@@ -16,8 +16,17 @@ if arg[1] == 'train' then
   print('Testing:')
 
   local rnn = nn.Sequential()
+  local lstm = nn.Sequential()
+
+  lstm:add(nn.FastLSTM(n_chars, hidden_size))
+
   local tbl = parse.read_file("sarcasm_v2.csv")
-  print(tbl)
+  local lup = nn.LookupTable(#tbl, 100)
+
+  rnn:add(nn.Sequencer(lstm))
+  rnn:add(nn.Select(1, -1))
+  rnn:add(nn.Linear(#lup, 100))
+  rnn:add(nn.LogSoftMax())
 
   os.exit()
 end

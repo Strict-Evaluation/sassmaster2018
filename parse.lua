@@ -19,13 +19,9 @@ function module.read_file(path)
       if responsetext then
           local resptable = string.lower(responsetext):gsub(".",function(x) table.insert(resptable, string.byte(x)) end)
       end
-      lines[#lines+1] = { corpus = corpus,
-                          label = label,
-                          id = id,
-                          quottable = quottable,
-                          responsetable = resptable
-                        }
 
+      lines[#lines+1] = { responsetable = resptable,
+                          label = label }
   end
   file:close()
   return lines
