@@ -1,18 +1,13 @@
 #!/usr/bin/env bash
 
-rm -f to_ml
-rm -f from_ml
-
-mkfifo to_ml
-sleep 10d > to_ml &
-
-mkfifo from_ml
+if [ "$1" == "init" ]; then
+  gem install json
+  gem install sinatra
+  luarocks install luasocket
+fi
 
 ./run.lua &
 
 sleep 2
 
-node server.js
-
-rm -f to_ml
-rm -f from_ml
+ruby server.rb
