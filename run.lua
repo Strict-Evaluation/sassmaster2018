@@ -68,6 +68,10 @@ function classify(string, wSarc, wNsarc)
   }
 end
 
+function shufflePunctuation(str)
+  return string.gsub(str, '(["=!.,?()])', ' %1 ')
+end
+
 function runBayesian(str)
   local sums = {}
   for k, v in pairs(sarc) do
@@ -89,7 +93,7 @@ function runBayesian(str)
     wNsarc[k] = v / sums[k]
   end
 
-  local line = str
+  local line = shufflePunctuation(str)
   if not line or line == 'quit' then return nil end
   return classify(line, wSarc, wNsarc)
 end
@@ -222,6 +226,7 @@ while true do
     end
   end
   if line == 'quit' then 
+    c:send('quit\n')
     break
   end
 end
