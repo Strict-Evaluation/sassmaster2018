@@ -162,38 +162,47 @@ n_chars = all_chars.n_chars
 sarc = fileFreq('sarc2.txt')
 notsarc = fileFreq('notsarc2.txt')
 
+function run_ml(line)
+  local result = nil
+  if not line then return nil end
+  line = string.lower(line)
+  local bayes = runBayesian(line)
+  local ml = runModel(line)
+  if not bayes or not ml then
+    return {prediction = 'neutral', data = {}}
+  end
+  if bayes.prediction ~= ml.prediction and ml.prediction ~= 'neutral' and bayes.prediction ~= 'neutral' then
+    if math.random(0, 1) == 0 then
+      result = bayes.prediction
+    else
+      result = ml.prediction
+    end
+  elseif bayes.prediction == 'neutral' then
+    result = ml.prediction
+  elseif ml.prediction == 'neutral' then
+    result = bayes.prediction
+  else
+    result = ml.prediction
+  end
+  return {
+    prediction = result,
+    data = {bayes = bayes, ml = ml}
+  }
+end
+
 -- Now handle requests!
 if arg[1] == 'train' then
   -- test network here
   print('Testing:')
   while true do
     local line = io.read()
-    local result = nil
     if not line then break end
-    line = string.lower(line)
-    local bayes = runBayesian(line)
-    local ml = runModel(line)
-    if bayes.prediction ~= ml.prediction and ml.prediction ~= 'neutral' and bayes.prediction ~= 'neutral' then
-      if math.random(0, 1) == 0 then
-        result = bayes.prediction
-      else
-        result = ml.prediction
-      end
-    elseif bayes.prediction == 'neutral' then
-      result = ml.prediction
-    elseif ml.prediction == 'neutral' then
-      result = bayes.prediction
-    else
-      result = ml.prediction
-    end
-    print(result)
+    print(run_ml(line))
   end
   os.exit()
 end
 
-function run_ml(line)
-  return 'placeholder'
-end
+local JSON = require("JSON")
 
 print('Starting')
 local socket = require 'socket'
@@ -202,8 +211,15 @@ local c = assert(s:accept())
 
 while true do
   local line = c:receive()
+  local res = nil
   if line then
-    c:send(run_ml(line))
+    res = run_ml(line)
+    if res then
+      c:send(JSON:encode(res) .. "\n")
+    else
+      c:send('{"error": "no classification"}\n')
+      break
+    end
   end
   if line == 'quit' then 
     break

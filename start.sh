@@ -4,10 +4,11 @@ if [ "$1" == "init" ]; then
   gem install json
   gem install sinatra
   luarocks install luasocket
+  luarocks install json-lua
 fi
 
 ./run.lua &
 
-sleep 2
+sleep 10
 
 ruby server.rb
