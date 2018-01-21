@@ -8,6 +8,10 @@ if [ "$1" == "init" ]; then
   luarocks install json-lua
 fi
 
+pkill luajit
+
+sleep 1
+
 ./run.lua &
 
 sleep 10
