@@ -6,15 +6,6 @@ require 'rnn'
 
 local parse = require("parse")
 
--- Train our network
-hidden_size = 200
-n_classes = 2
-n_chars = 255
-
-function random_sentence()
-  return tbl[math.ceil(math.random() * #tbl)]
-end
-
 function wordFreq(str)
   local frequencies = {}
   
@@ -62,20 +53,22 @@ function classify(string, wSarc, wNsarc)
     table.insert(sarc, nUses(wSarc, word))
     table.insert(nsarc, nUses(wNsarc, word))
   end
+  local prediction = 'neutral'
+  if math.abs(average(sarc) - average(nsarc)) >= 0.05 then
+    if average(sarc) > average(nsarc) then
+      prediction = 'sarc'
+    else
+      prediction = 'notsarc'
+    end
+  end
   return {
+    prediction = prediction,
     sarc = average(sarc),
     nsarc = average(nsarc)
   }
 end
 
--- Now handle requests!
-if arg[1] == 'train' then
-  -- test network here
-  print('Testing:')
-
-  local sarc = fileFreq('sarc2.txt')
-  local notsarc = fileFreq('notsarc2.txt')
-
+function runBayesian(str)
   local sums = {}
   for k, v in pairs(sarc) do
     sums[k] = v
@@ -96,12 +89,105 @@ if arg[1] == 'train' then
     wNsarc[k] = v / sums[k]
   end
 
-  while true do
-    local line = io.read()
-    if not line or line == 'quit' then break end
-    print(classify(line, wSarc, wNsarc))
+  local line = str
+  if not line or line == 'quit' then return nil end
+  return classify(line, wSarc, wNsarc)
+end
+
+function unicodeChars(str)
+    return string.gfind(str, "([%z\1-\127\194-\244][\128-\191]*)")
+end
+
+function trim(s)
+    return s:gsub("^%s+", ""):gsub("%s+$", "")
+end
+
+function makeWordInputs(word, n_chars)
+  word = trim(word)
+  local char_vectors = {}
+  for char in unicodeChars(word) do
+    if all_chars[char] then
+      local char_vector = torch.zeros(n_chars)
+      char_vector[all_chars[char]] = 1
+      table.insert(char_vectors, char_vector)
+    end
+  end
+  local inputs = torch.zeros(#char_vectors, n_chars)
+  for ci = 1, #char_vectors do
+      inputs[ci] = char_vectors[ci]
+  end
+  return inputs
+end
+
+function runModel(str)
+  local line = str
+  if not line or line == 'quit' then return nil end
+
+  model:forget()
+  local inputs = makeWordInputs(line, n_chars)
+  local outputs = model:forward(inputs)
+
+  -- Get maximum output value and index as score and class
+  max_val, max_index = outputs:max(1)
+  local score = max_val[1]
+  local predicted = max_index[1]
+  print(line, classes[predicted] .. '   ', score)
+
+  -- Make list of pairs of all scores and classes
+  local predictions = {}
+  for pi = 1, outputs:size()[1] do
+      predictions[pi] = {
+          score=outputs[pi],
+          class=classes[pi]
+      }
   end
 
+  local prediction = classes[predicted]
+  if math.abs(predictions[2].score - predictions[1].score) < 1 then
+    prediction = 'neutral'
+  end
+
+  return {
+    prediction = prediction,
+    nsarc = predictions[2].score,
+    sarc = predictions[1].score
+  }
+end
+
+model = torch.load('t7s/model.t7')
+classes = torch.load('t7s/classes.t7')
+all_chars = torch.load('t7s/all_chars.t7')
+n_chars = all_chars.n_chars
+
+sarc = fileFreq('sarc2.txt')
+notsarc = fileFreq('notsarc2.txt')
+
+-- Now handle requests!
+if arg[1] == 'train' then
+  -- test network here
+  print('Testing:')
+  while true do
+    local line = io.read()
+    local result = nil
+    if not line then break end
+    line = string.lower(line)
+    local bayes = runBayesian(line)
+    local ml = runModel(line)
+    if bayes.prediction ~= ml.prediction and ml.prediction ~= 'neutral' and bayes.prediction ~= 'neutral' then
+      if math.random(0, 1) == 0 then
+        result = bayes.prediction
+      else
+        result = ml.prediction
+      end
+    elseif bayes.prediction == 'neutral' then
+      result = ml.prediction
+    elseif ml.prediction == 'neutral' then
+      result = bayes.prediction
+    else
+      result = ml.prediction
+    end
+    print(result)
+  end
   os.exit()
 end
 
