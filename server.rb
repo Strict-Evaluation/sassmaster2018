@@ -1,6 +1,11 @@
 require 'sinatra'
 require 'socket'
 require 'json'
+require 'sinatra/cross_origin'
+
+configure do
+  enable :cross_origin
+end
 
 $client = TCPSocket.new 'localhost', 12345
 

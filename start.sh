@@ -3,6 +3,7 @@
 if [ "$1" == "init" ]; then
   gem install json
   gem install sinatra
+  gem install sinatra-cross_origin
   luarocks install luasocket
   luarocks install json-lua
 fi
