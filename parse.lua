@@ -25,7 +25,6 @@ function module.read_file(path)
                             quottable = quottable,
                             responsetable = resptable
                           })
-
   end
   file:close()
   return lines
